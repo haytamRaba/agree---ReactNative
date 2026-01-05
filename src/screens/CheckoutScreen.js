@@ -9,9 +9,11 @@ import {
   Alert,
 } from 'react-native';
 import { COLORS } from '../constants/colors';
+import { useTheme } from '../context/ThemeContext';
 
 export default function CheckoutScreen({ route, navigation }) {
   const { cart = [] } = route.params || {};
+  const { theme } = useTheme();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
@@ -42,25 +44,25 @@ export default function CheckoutScreen({ route, navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Order Summary */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Order Summary</Text>
+        <View style={[styles.section, { backgroundColor: theme.card }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Order Summary</Text>
           {cart.length === 0 ? (
-            <Text style={styles.emptyText}>Your cart is empty</Text>
+            <Text style={[styles.emptyText, { color: theme.textSecondary }]}>Your cart is empty</Text>
           ) : (
             cart.map((item) => (
-              <View key={item.id} style={styles.cartItem}>
+              <View key={item.id} style={[styles.cartItem, { borderBottomColor: theme.lightGray }]}>
                 <Text style={styles.cartItemImage}>{item.image}</Text>
                 <View style={styles.cartItemInfo}>
-                  <Text style={styles.cartItemName}>{item.name}</Text>
-                  <Text style={styles.cartItemPrice}>
-                    ${item.price} x {item.quantity}
+                  <Text style={[styles.cartItemName, { color: theme.textPrimary }]}>{item.name}</Text>
+                  <Text style={[styles.cartItemPrice, { color: theme.textSecondary }]}>
+                    DH{item.price} x {item.quantity}
                   </Text>
                 </View>
-                <Text style={styles.cartItemTotal}>
-                  ${(item.price * item.quantity).toFixed(2)}
+                <Text style={[styles.cartItemTotal, { color: theme.primary }]}>
+                  DH{(item.price * item.quantity).toFixed(2)}
                 </Text>
               </View>
             ))
@@ -69,53 +71,53 @@ export default function CheckoutScreen({ route, navigation }) {
 
         {/* Customer Information Form */}
         {cart.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Delivery Information</Text>
+          <View style={[styles.section, { backgroundColor: theme.card }]}>
+            <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Delivery Information</Text>
             
             <View style={styles.formGroup}>
-              <Text style={styles.label}>First Name</Text>
+              <Text style={[styles.label, { color: theme.textPrimary }]}>First Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.lightGray, color: theme.textPrimary, borderColor: theme.lightGray }]}
                 placeholder="Enter your first name"
                 value={firstName}
                 onChangeText={setFirstName}
-                placeholderTextColor={COLORS.gray}
+                placeholderTextColor={theme.textSecondary}
               />
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Last Name</Text>
+              <Text style={[styles.label, { color: theme.textPrimary }]}>Last Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.lightGray, color: theme.textPrimary, borderColor: theme.lightGray }]}
                 placeholder="Enter your last name"
                 value={lastName}
                 onChangeText={setLastName}
-                placeholderTextColor={COLORS.gray}
+                placeholderTextColor={theme.textSecondary}
               />
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Phone Number</Text>
+              <Text style={[styles.label, { color: theme.textPrimary }]}>Phone Number</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.lightGray, color: theme.textPrimary, borderColor: theme.lightGray }]}
                 placeholder="Enter your phone number"
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
-                placeholderTextColor={COLORS.gray}
+                placeholderTextColor={theme.textSecondary}
               />
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Delivery Address</Text>
+              <Text style={[styles.label, { color: theme.textPrimary }]}>Delivery Address</Text>
               <TextInput
-                style={[styles.input, styles.textArea]}
+                style={[styles.input, styles.textArea, { backgroundColor: theme.lightGray, color: theme.textPrimary, borderColor: theme.lightGray }]}
                 placeholder="Enter your delivery address"
                 value={address}
                 onChangeText={setAddress}
                 multiline
                 numberOfLines={3}
-                placeholderTextColor={COLORS.gray}
+                placeholderTextColor={theme.textSecondary}
               />
             </View>
           </View>
@@ -124,13 +126,13 @@ export default function CheckoutScreen({ route, navigation }) {
 
       {/* Footer with Total and Place Order Button */}
       {cart.length > 0 && (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { backgroundColor: theme.card, borderTopColor: theme.lightGray }]}>
           <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.totalAmount}>DH{calculateTotal().toFixed(2)}</Text>
+            <Text style={[styles.totalLabel, { color: theme.textPrimary }]}>Total:</Text>
+            <Text style={[styles.totalAmount, { color: theme.primary }]}>DH{calculateTotal().toFixed(2)}</Text>
           </View>
           <TouchableOpacity
-            style={styles.placeOrderButton}
+            style={[styles.placeOrderButton, { backgroundColor: theme.primary }]}
             onPress={handlePlaceOrder}
           >
             <Text style={styles.placeOrderButtonText}>Place Order</Text>
@@ -144,25 +146,21 @@ export default function CheckoutScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   content: {
     flex: 1,
   },
   section: {
-    backgroundColor: COLORS.white,
     marginTop: 15,
     padding: 20,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
     marginBottom: 15,
   },
   emptyText: {
     textAlign: 'center',
-    color: COLORS.textSecondary,
     fontSize: 16,
     paddingVertical: 20,
   },
@@ -171,7 +169,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
   },
   cartItemImage: {
     fontSize: 40,
@@ -183,17 +180,14 @@ const styles = StyleSheet.create({
   cartItemName: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: 4,
   },
   cartItemPrice: {
     fontSize: 14,
-    color: COLORS.textSecondary,
   },
   cartItemTotal: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.primary,
   },
   formGroup: {
     marginBottom: 20,
@@ -201,27 +195,21 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: COLORS.lightGray,
     borderRadius: 10,
     padding: 15,
     fontSize: 16,
-    color: COLORS.textPrimary,
     borderWidth: 1,
-    borderColor: COLORS.lightGray,
   },
   textArea: {
     height: 80,
     textAlignVertical: 'top',
   },
   footer: {
-    backgroundColor: COLORS.white,
     padding: 20,
     borderTopWidth: 1,
-    borderTopColor: COLORS.lightGray,
   },
   totalContainer: {
     flexDirection: 'row',
@@ -232,21 +220,18 @@ const styles = StyleSheet.create({
   totalLabel: {
     fontSize: 18,
     fontWeight: '600',
-    color: COLORS.textPrimary,
   },
   totalAmount: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: COLORS.primary,
   },
   placeOrderButton: {
-    backgroundColor: COLORS.primary,
     borderRadius: 12,
     padding: 18,
     alignItems: 'center',
   },
   placeOrderButtonText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
   },

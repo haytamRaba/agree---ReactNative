@@ -8,10 +8,12 @@ import {
   FlatList,
 } from 'react-native';
 import { COLORS } from '../constants/colors';
+import { useTheme } from '../context/ThemeContext';
 import { PRODUCTS, CATEGORIES } from '../data/productsData';
 
 export default function HomeScreen({ navigation }) {
   const [cart, setCart] = useState([]);
+  const { theme, isDarkMode, toggleTheme } = useTheme();
 
   const popularProducts = PRODUCTS.filter((product) => product.popular);
 
@@ -29,14 +31,14 @@ export default function HomeScreen({ navigation }) {
   };
 
   const renderProductCard = ({ item }) => (
-    <View style={styles.productCard}>
+    <View style={[styles.productCard, { backgroundColor: theme.card }]}>
       <Text style={styles.productImage}>{item.image}</Text>
-      <Text style={styles.productName}>{item.name}</Text>
-      <Text style={styles.productDescription}>{item.description}</Text>
+      <Text style={[styles.productName, { color: theme.textPrimary }]}>{item.name}</Text>
+      <Text style={[styles.productDescription, { color: theme.textSecondary }]}>{item.description}</Text>
       <View style={styles.productFooter}>
-        <Text style={styles.productPrice}>DH{item.price}</Text>
+        <Text style={[styles.productPrice, { color: theme.primary }]}>DH{item.price}</Text>
         <TouchableOpacity
-          style={styles.addButton}
+          style={[styles.addButton, { backgroundColor: theme.primary }]}
           onPress={() => addToCart(item)}
         >
           <Text style={styles.addButtonText}>Add +</Text>
@@ -46,37 +48,45 @@ export default function HomeScreen({ navigation }) {
   );
 
   const renderCategoryCard = ({ item }) => (
-    <TouchableOpacity style={styles.categoryCard}>
+    <TouchableOpacity style={[styles.categoryCard, { backgroundColor: theme.card }]}>
       <Text style={styles.categoryIcon}>{item.icon}</Text>
-      <Text style={styles.categoryName}>{item.name}</Text>
+      <Text style={[styles.categoryName, { color: theme.textPrimary }]}>{item.name}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card }]}>
         <View>
-          <Text style={styles.headerGreeting}>Hello! 👋</Text>
-          <Text style={styles.headerTitle}>What would you like to eat?</Text>
+          <Text style={[styles.headerGreeting, { color: theme.textSecondary }]}>Hello! 👋</Text>
+          <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>What would you like to eat?</Text>
         </View>
-        <TouchableOpacity
-          style={styles.cartButton}
-          onPress={() => navigation.navigate('Checkout', { cart })}
-        >
-          <Text style={styles.cartIcon}>🛒</Text>
-          {cart.length > 0 && (
-            <View style={styles.cartBadge}>
-              <Text style={styles.cartBadgeText}>{cart.length}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={[styles.themeButton, { backgroundColor: theme.primary }]}
+            onPress={toggleTheme}
+          >
+            <Text style={styles.themeIcon}>{isDarkMode ? '☀️' : '🌙'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cartButton}
+            onPress={() => navigation.navigate('Checkout', { cart })}
+          >
+            <Text style={styles.cartIcon}>🛒</Text>
+            {cart.length > 0 && (
+              <View style={[styles.cartBadge, { backgroundColor: theme.accent }]}>
+                <Text style={styles.cartBadgeText}>{cart.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Popular Products Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Popular Dishes</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Popular Dishes</Text>
           <FlatList
             data={popularProducts}
             renderItem={renderProductCard}
@@ -89,7 +99,7 @@ export default function HomeScreen({ navigation }) {
 
         {/* Categories Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categories</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Categories</Text>
           <FlatList
             data={CATEGORIES}
             renderItem={renderCategoryCard}
@@ -101,19 +111,19 @@ export default function HomeScreen({ navigation }) {
 
         {/* All Products Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>All Products</Text>
+          <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>All Products</Text>
           {PRODUCTS.map((product) => (
-            <View key={product.id} style={styles.listProductCard}>
+            <View key={product.id} style={[styles.listProductCard, { backgroundColor: theme.card }]}>
               <Text style={styles.listProductImage}>{product.image}</Text>
               <View style={styles.listProductInfo}>
-                <Text style={styles.listProductName}>{product.name}</Text>
-                <Text style={styles.listProductDescription}>
+                <Text style={[styles.listProductName, { color: theme.textPrimary }]}>{product.name}</Text>
+                <Text style={[styles.listProductDescription, { color: theme.textSecondary }]}>
                   {product.description}
                 </Text>
-                <Text style={styles.listProductPrice}>${product.price}</Text>
+                <Text style={[styles.listProductPrice, { color: theme.primary }]}>DH{product.price}</Text>
               </View>
               <TouchableOpacity
-                style={styles.listAddButton}
+                style={[styles.listAddButton, { backgroundColor: theme.primary }]}
                 onPress={() => addToCart(product)}
               >
                 <Text style={styles.addButtonText}>+</Text>
@@ -129,27 +139,38 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
-    backgroundColor: COLORS.white,
     padding: 20,
     paddingTop: 50,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
+    borderBottomColor: '#E0E0E0',
   },
   headerGreeting: {
     fontSize: 16,
-    color: COLORS.textSecondary,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
     marginTop: 5,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  themeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  themeIcon: {
+    fontSize: 20,
   },
   cartButton: {
     position: 'relative',
@@ -161,7 +182,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -5,
     right: -5,
-    backgroundColor: COLORS.accent,
     borderRadius: 10,
     width: 20,
     height: 20,
@@ -169,7 +189,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cartBadgeText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: 'bold',
   },
@@ -182,7 +202,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
     marginLeft: 20,
     marginBottom: 15,
   },
@@ -190,7 +209,6 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
   },
   productCard: {
-    backgroundColor: COLORS.white,
     borderRadius: 15,
     padding: 15,
     marginRight: 15,
@@ -209,12 +227,10 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
     marginBottom: 5,
   },
   productDescription: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     marginBottom: 10,
     height: 35,
   },
@@ -226,16 +242,14 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: COLORS.primary,
   },
   addButton: {
-    backgroundColor: COLORS.primary,
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
   },
   addButtonText: {
-    color: COLORS.white,
+    color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 14,
   },
@@ -245,7 +259,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   categoryCard: {
-    backgroundColor: COLORS.white,
     borderRadius: 15,
     padding: 20,
     alignItems: 'center',
@@ -263,11 +276,9 @@ const styles = StyleSheet.create({
   categoryName: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.textPrimary,
     textAlign: 'center',
   },
   listProductCard: {
-    backgroundColor: COLORS.white,
     borderRadius: 15,
     padding: 15,
     marginHorizontal: 20,
@@ -290,21 +301,17 @@ const styles = StyleSheet.create({
   listProductName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.textPrimary,
     marginBottom: 5,
   },
   listProductDescription: {
     fontSize: 12,
-    color: COLORS.textSecondary,
     marginBottom: 5,
   },
   listProductPrice: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: COLORS.primary,
   },
   listAddButton: {
-    backgroundColor: COLORS.primary,
     width: 40,
     height: 40,
     borderRadius: 20,

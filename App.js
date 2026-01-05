@@ -9,20 +9,23 @@ import SplashScreen from './src/screens/SplashScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import CheckoutScreen from './src/screens/CheckoutScreen';
 import { COLORS } from './src/constants/colors';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 
-export default function App() {
+function AppNavigator() {
+  const { theme } = useTheme();
+
   return (
     <NavigationContainer>
-      <StatusBar style="light" />
+      <StatusBar style={theme.background === '#121212' ? 'light' : 'dark'} />
       <Stack.Navigator
         initialRouteName="Splash"
         screenOptions={{
           headerStyle: {
-            backgroundColor: COLORS.primary,
+            backgroundColor: theme.primary,
           },
-          headerTintColor: COLORS.white,
+          headerTintColor: theme.textLight,
           headerTitleStyle: {
             fontWeight: 'bold',
           },
@@ -47,3 +50,10 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppNavigator />
+    </ThemeProvider>
+  );
