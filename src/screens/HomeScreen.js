@@ -9,11 +9,13 @@ import {
 } from 'react-native';
 import { COLORS } from '../constants/colors';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
 import { PRODUCTS, CATEGORIES } from '../data/productsData';
 
 export default function HomeScreen({ navigation }) {
   const [cart, setCart] = useState([]);
   const { theme, isDarkMode, toggleTheme } = useTheme();
+  const { user, isRegistered } = useUser();
 
   const popularProducts = PRODUCTS.filter((product) => product.popular);
 
@@ -59,7 +61,9 @@ export default function HomeScreen({ navigation }) {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.card }]}>
         <View>
-          <Text style={[styles.headerGreeting, { color: theme.textSecondary }]}>Hello! 👋</Text>
+          <Text style={[styles.headerGreeting, { color: theme.textSecondary }]}>
+            {isRegistered && user ? `Welcome, ${user.nickname}! 👋` : 'Hello! 👋'}
+          </Text>
           <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>What would you like to eat?</Text>
         </View>
         <View style={styles.headerButtons}>

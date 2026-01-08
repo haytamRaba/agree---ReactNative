@@ -7,20 +7,85 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  Modal,
 } from 'react-native';
 import { COLORS } from '../constants/colors';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
 
 export default function CheckoutScreen({ route, navigation }) {
   const { cart = [] } = route.params || {};
   const { theme } = useTheme();
+  const { user, isRegistered, registerUser, loginUser } = useUser();
+  
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
 
+  // Registration/Login states
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isLoginMode, setIsLoginMode] = useState(true);
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authPasswordConfirm, setAuthPasswordConfirm] = useState('');
+  const [authNickname, setAuthNickname] = useState('');
+
   const calculateTotal = () => {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  };
+
+  const handleRegister = () => {
+    if (!authEmail || !authPassword || !authPasswordConfirm || !authNickname) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (authPassword !== authPasswordConfirm) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    if (authPassword.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    if (registerUser(authEmail, authPassword, authNickname)) {
+      Alert.alert('Success', `Welcome ${authNickname}! Your account has been created.`);
+      setShowAuthModal(false);
+      resetAuthForm();
+    }
+  };
+
+  const handleLogin = () => {
+    if (!authEmail || !authPassword) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (loginUser(authEmail, authPassword)) {
+      Alert.alert('Success', `Welcome back ${user?.nickname}!`);
+      setShowAuthModal(false);
+      resetAuthForm();
+    } else {
+      Alert.alert('Error', 'Invalid email or password');
+    }
+  };
+
+  const resetAuthForm = () => {
+    setAuthEmail('');
+    setAuthPassword('');
+    setAuthPasswordConfirm('');
+    setAuthNickname('');
+  };
+
+  const handleAuthAction = () => {
+    if (isLoginMode) {
+      handleLogin();
+    } else {
+      handleRegister();
+    }
   };
 
   const handlePlaceOrder = () => {
@@ -45,7 +110,124 @@ export default function CheckoutScreen({ route, navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Auth Modal */}
+      <Modal
+        visible={showAuthModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowAuthModal(false)}
+      >
+        <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>
+                {isLoginMode ? 'Login' : 'Create Account'}
+              </Text>
+              <TouchableOpacity onPress={() => setShowAuthModal(false)}>
+                <Text style={[styles.closeButton, { color: theme.textPrimary }]}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: theme.textPrimary }]}>Email</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.lightGray, color: theme.textPrimary, borderColor: theme.lightGray }]}
+                  placeholder="Enter your email"
+                  value={authEmail}
+                  onChangeText={setAuthEmail}
+                  keyboardType="email-address"
+                  editable={!isLoginMode || isRegistered === false}
+                  placeholderTextColor={theme.textSecondary}
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={[styles.label, { color: theme.textPrimary }]}>Password</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.lightGray, color: theme.textPrimary, borderColor: theme.lightGray }]}
+                  placeholder="Enter your password"
+                  value={authPassword}
+                  onChangeText={setAuthPassword}
+                  secureTextEntry={true}
+                  placeholderTextColor={theme.textSecondary}
+                />
+              </View>
+
+              {!isLoginMode && (
+                <>
+                  <View style={styles.formGroup}>
+                    <Text style={[styles.label, { color: theme.textPrimary }]}>Confirm Password</Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: theme.lightGray, color: theme.textPrimary, borderColor: theme.lightGray }]}
+                      placeholder="Confirm your password"
+                      value={authPasswordConfirm}
+                      onChangeText={setAuthPasswordConfirm}
+                      secureTextEntry={true}
+                      placeholderTextColor={theme.textSecondary}
+                    />
+                  </View>
+
+                  <View style={styles.formGroup}>
+                    <Text style={[styles.label, { color: theme.textPrimary }]}>Nickname</Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: theme.lightGray, color: theme.textPrimary, borderColor: theme.lightGray }]}
+                      placeholder="Choose your nickname"
+                      value={authNickname}
+                      onChangeText={setAuthNickname}
+                      placeholderTextColor={theme.textSecondary}
+                    />
+                  </View>
+                </>
+              )}
+
+              <TouchableOpacity
+                style={[styles.authButton, { backgroundColor: theme.primary }]}
+                onPress={handleAuthAction}
+              >
+                <Text style={styles.authButtonText}>
+                  {isLoginMode ? 'Login' : 'Register'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toggleAuthMode}
+                onPress={() => {
+                  setIsLoginMode(!isLoginMode);
+                  resetAuthForm();
+                }}
+              >
+                <Text style={[styles.toggleAuthModeText, { color: theme.primary }]}>
+                  {isLoginMode ? 'No account? Register here' : 'Already have an account? Login'}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* User Authentication Section */}
+        <View style={[styles.section, { backgroundColor: theme.card }]}>
+          {isRegistered && user ? (
+            <View style={styles.userInfoContainer}>
+              <Text style={[styles.userGreeting, { color: theme.primary }]}>✓ Logged in as</Text>
+              <Text style={[styles.userName, { color: theme.textPrimary }]}>{user.nickname}</Text>
+              <Text style={[styles.userEmail, { color: theme.textSecondary }]}>{user.email}</Text>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={[styles.registerButton, { backgroundColor: theme.primary }]}
+              onPress={() => {
+                setIsLoginMode(false);
+                setShowAuthModal(true);
+              }}
+            >
+              <Text style={styles.registerButtonText}>📝 Register / Login Account</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Order Summary */}
         <View style={[styles.section, { backgroundColor: theme.card }]}>
           <Text style={[styles.sectionTitle, { color: theme.textPrimary }]}>Order Summary</Text>
@@ -234,5 +416,85 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  registerButton: {
+    borderRadius: 12,
+    padding: 18,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  registerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  userInfoContainer: {
+    paddingVertical: 15,
+    alignItems: 'center',
+  },
+  userGreeting: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  userEmail: {
+    fontSize: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
+    paddingBottom: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  modalBody: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  authButton: {
+    borderRadius: 12,
+    padding: 15,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 15,
+  },
+  authButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  toggleAuthMode: {
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  toggleAuthModeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

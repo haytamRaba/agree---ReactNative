@@ -10,6 +10,7 @@ import HomeScreen from './src/screens/HomeScreen';
 import CheckoutScreen from './src/screens/CheckoutScreen';
 import { COLORS } from './src/constants/colors';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { UserProvider } from './src/context/UserContext';
 
 const Stack = createNativeStackNavigator();
 
@@ -54,6 +55,9 @@ function AppNavigator() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AppNavigator />
+      <UserProvider>
+        <AppNavigator />
+      </UserProvider>
     </ThemeProvider>
   );
+}
