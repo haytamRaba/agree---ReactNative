@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { COLORS } from '../constants/colors';
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet, Animated } from "react-native";
+import { COLORS } from "../constants/colors";
 
 export default function SplashScreen({ navigation }) {
   const fadeAnim = new Animated.Value(0);
@@ -21,7 +21,7 @@ export default function SplashScreen({ navigation }) {
     ]).start();
 
     const timer = setTimeout(() => {
-      navigation.replace('Home');
+      navigation.replace("Home");
     }, 2500);
 
     return () => clearTimeout(timer);
@@ -50,11 +50,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   logoContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   logo: {
     fontSize: 100,
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: 48,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: COLORS.white,
     marginBottom: 10,
   },
