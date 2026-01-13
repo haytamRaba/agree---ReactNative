@@ -1,6 +1,6 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { addCustomer, getUserByPhone } from '../services/database';
+import React, { createContext, useState, useEffect, useContext } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { addCustomer, getUserByPhone } from "../services/database";
 
 export const UserContext = createContext();
 
@@ -14,11 +14,11 @@ export const UserProvider = ({ children }) => {
 
   const loadUser = async () => {
     try {
-      const userData = await AsyncStorage.getItem('user');
+      const userData = await AsyncStorage.getItem("user");
       if (userData) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
-        
+
         // Sync with database
         const dbUser = await getUserByPhone(parsedUser.phone);
         if (!dbUser) {
@@ -26,7 +26,7 @@ export const UserProvider = ({ children }) => {
         }
       }
     } catch (error) {
-      console.error('Error loading user:', error);
+      console.error("Error loading user:", error);
     } finally {
       setLoading(false);
     }
@@ -34,37 +34,37 @@ export const UserProvider = ({ children }) => {
 
   const login = async (userData) => {
     try {
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      await AsyncStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
-      
+
       // Save to database
       await addCustomer(userData);
     } catch (error) {
-      console.error('Error saving user:', error);
+      console.error("Error saving user:", error);
     }
   };
 
   const updateUser = async (userData) => {
     try {
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
+      await AsyncStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
-      
+
       // Update in database
       const dbUser = await getUserByPhone(userData.phone);
       if (!dbUser) {
         await addCustomer(userData);
       }
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error("Error updating user:", error);
     }
   };
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem("user");
       setUser(null);
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error("Error logging out:", error);
     }
   };
 
@@ -78,7 +78,7 @@ export const UserProvider = ({ children }) => {
 export const useUser = () => {
   const context = useContext(UserContext);
   if (!context) {
-    throw new Error('useUser must be used within UserProvider');
+    throw new Error("useUser must be used within UserProvider");
   }
   return context;
 };

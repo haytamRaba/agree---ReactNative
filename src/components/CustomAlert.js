@@ -1,32 +1,42 @@
-import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import colors from '../constants/colors';
+import React from "react";
+import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import colors from "../constants/colors";
 
-const CustomAlert = ({ 
-  visible, 
-  title, 
-  message, 
-  type = 'info', // 'success', 'error', 'warning', 'info', 'confirm'
+const CustomAlert = ({
+  visible,
+  title,
+  message,
+  type = "info", // 'success', 'error', 'warning', 'info', 'confirm'
   buttons = [],
-  onClose 
+  onClose,
 }) => {
   const getIcon = () => {
     switch (type) {
-      case 'success': return '✓';
-      case 'error': return '✕';
-      case 'warning': return '⚠';
-      case 'confirm': return '?';
-      default: return 'ℹ';
+      case "success":
+        return "✓";
+      case "error":
+        return "✕";
+      case "warning":
+        return "⚠";
+      case "confirm":
+        return "?";
+      default:
+        return "ℹ";
     }
   };
 
   const getColor = () => {
     switch (type) {
-      case 'success': return colors.primary;
-      case 'error': return '#EF4444';
-      case 'warning': return '#F59E0B';
-      case 'confirm': return '#3B82F6';
-      default: return colors.text;
+      case "success":
+        return colors.primary;
+      case "error":
+        return "#EF4444";
+      case "warning":
+        return "#F59E0B";
+      case "confirm":
+        return "#3B82F6";
+      default:
+        return colors.text;
     }
   };
 
@@ -39,13 +49,20 @@ const CustomAlert = ({
     >
       <View style={styles.overlay}>
         <View style={styles.alertContainer}>
-          <View style={[styles.iconContainer, { backgroundColor: getColor() + '20' }]}>
-            <Text style={[styles.icon, { color: getColor() }]}>{getIcon()}</Text>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: getColor() + "20" },
+            ]}
+          >
+            <Text style={[styles.icon, { color: getColor() }]}>
+              {getIcon()}
+            </Text>
           </View>
-          
+
           {title && <Text style={styles.title}>{title}</Text>}
           {message && <Text style={styles.message}>{message}</Text>}
-          
+
           <View style={styles.buttonContainer}>
             {buttons.length > 0 ? (
               buttons.map((button, index) => (
@@ -53,22 +70,33 @@ const CustomAlert = ({
                   key={index}
                   style={[
                     styles.button,
-                    button.style === 'cancel' ? styles.cancelButton : styles.confirmButton,
-                    { backgroundColor: button.style === 'cancel' ? '#E5E7EB' : getColor() }
+                    button.style === "cancel"
+                      ? styles.cancelButton
+                      : styles.confirmButton,
+                    {
+                      backgroundColor:
+                        button.style === "cancel" ? "#E5E7EB" : getColor(),
+                    },
                   ]}
                   onPress={button.onPress}
                 >
-                  <Text style={[
-                    styles.buttonText,
-                    button.style === 'cancel' && styles.cancelButtonText
-                  ]}>
+                  <Text
+                    style={[
+                      styles.buttonText,
+                      button.style === "cancel" && styles.cancelButtonText,
+                    ]}
+                  >
                     {button.text}
                   </Text>
                 </TouchableOpacity>
               ))
             ) : (
               <TouchableOpacity
-                style={[styles.button, styles.confirmButton, { backgroundColor: getColor() }]}
+                style={[
+                  styles.button,
+                  styles.confirmButton,
+                  { backgroundColor: getColor() },
+                ]}
                 onPress={onClose}
               >
                 <Text style={styles.buttonText}>OK</Text>
@@ -84,18 +112,18 @@ const CustomAlert = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   alertContainer: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 20,
     padding: 24,
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -105,54 +133,54 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
     marginBottom: 16,
   },
   icon: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 8,
   },
   message: {
     fontSize: 16,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 24,
     lineHeight: 22,
   },
   buttonContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   button: {
     flex: 1,
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   confirmButton: {
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
   },
   cancelButton: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: "#E5E7EB",
   },
   buttonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   cancelButtonText: {
     color: colors.text,

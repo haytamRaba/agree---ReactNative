@@ -37,10 +37,10 @@ A React Native mobile application developed as a school project. The app provide
 
 ## 📋 Project Overview
 
-
 **Agree** is a user-friendly food delivery application that specializes in vegetarian cuisine. The app allows users to browse products by categories, add items to their cart, and proceed to checkout with a simple and intuitive interface.
 
 ### Key Features
+
 - ✅ Browse healthy vegetarian food products
 - ✅ Category-based product filtering
 - ✅ Shopping cart management
@@ -55,7 +55,6 @@ A React Native mobile application developed as a school project. The app provide
 - **Framework**: React Native with Expo
 - **Language**: JavaScript
 - **Navigation**: React Navigation
-
 
 ---
 
@@ -84,6 +83,7 @@ reactNat/
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js (v14 or higher)
 - npm or yarn package manager
 - Expo CLI (optional)
@@ -91,6 +91,7 @@ reactNat/
 ### Installation
 
 1. **Clone or navigate to the project directory**
+
    ```bash
    git clone https://github.com/haytamRaba/agree---ReactNative.git
    cd reactNat
@@ -104,16 +105,19 @@ reactNat/
 ### Running the App
 
 #### Web Version
+
 ```bash
 npm run web
 ```
 
 #### Android
+
 ```bash
 npm run android
 ```
 
 #### iOS
+
 ```bash
 npm run ios
 ```
@@ -123,12 +127,15 @@ npm run ios
 ## 🎨 Design & Features
 
 ### Color Theme
+
 The app uses a healthy, natural color palette featuring:
+
 - Fresh greens for primary actions
 - Neutral backgrounds for clarity
 - High contrast for readability
 
 ### Navigation Flow
+
 1. **Splash Screen** - Animated introduction with app branding
 2. **Home Screen** - Browse products and categories
 3. **Cart** - Review selected items
@@ -165,11 +172,12 @@ The app uses a healthy, natural color palette featuring:
 
 ## 👨‍💼 Author
 
-School Project - Haytam Raba G9 
+School Project - Haytam Raba G9
 
 ---
 
 ## 📄 License
+
 This project is licensed under the MIT License – see the [LICENSE](LICENSE) file for details.
 
 Created for educational purposes as a school project.

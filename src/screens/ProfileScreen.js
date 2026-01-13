@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,59 +8,66 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native';
-import { useUser } from '../context/UserContext';
-import CustomAlert from '../components/CustomAlert';
-import colors from '../constants/colors';
+} from "react-native";
+import { useUser } from "../context/UserContext";
+import CustomAlert from "../components/CustomAlert";
+import colors from "../constants/colors";
 
 export default function ProfileScreen({ navigation }) {
   const { user, updateUser, logout } = useUser();
   const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(user?.name || '');
-  const [phone, setPhone] = useState(user?.phone || '');
-  const [address, setAddress] = useState(user?.address || '');
+  const [name, setName] = useState(user?.name || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [address, setAddress] = useState(user?.address || "");
   const [alertConfig, setAlertConfig] = useState({ visible: false });
 
-  const showAlert = (title, message, type = 'info', buttons = []) => {
+  const showAlert = (title, message, type = "info", buttons = []) => {
     setAlertConfig({
       visible: true,
       title,
       message,
       type,
-      buttons: buttons.length > 0 ? buttons : [{ text: 'OK', onPress: () => setAlertConfig({ visible: false }) }]
+      buttons:
+        buttons.length > 0
+          ? buttons
+          : [{ text: "OK", onPress: () => setAlertConfig({ visible: false }) }],
     });
   };
 
   const handleSave = async () => {
     if (!name || !phone || !address) {
-      showAlert('Erreur', 'Veuillez remplir tous les champs', 'error');
+      showAlert("Erreur", "Veuillez remplir tous les champs", "error");
       return;
     }
 
     try {
       await updateUser({ name, phone, address });
       setIsEditing(false);
-      showAlert('Succès', 'Profil mis à jour avec succès', 'success');
+      showAlert("Succès", "Profil mis à jour avec succès", "success");
     } catch (error) {
-      showAlert('Erreur', 'Erreur lors de la mise à jour du profil', 'error');
+      showAlert("Erreur", "Erreur lors de la mise à jour du profil", "error");
     }
   };
 
   const handleLogout = () => {
     showAlert(
-      'Déconnexion',
-      'Êtes-vous sûr de vouloir vous déconnecter?',
-      'confirm',
+      "Déconnexion",
+      "Êtes-vous sûr de vouloir vous déconnecter?",
+      "confirm",
       [
-        { text: 'Annuler', style: 'cancel', onPress: () => setAlertConfig({ visible: false }) },
         {
-          text: 'Déconnecter',
+          text: "Annuler",
+          style: "cancel",
+          onPress: () => setAlertConfig({ visible: false }),
+        },
+        {
+          text: "Déconnecter",
           onPress: async () => {
             await logout();
             setAlertConfig({ visible: false });
-            navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
-          }
-        }
+            navigation.reset({ index: 0, routes: [{ name: "Home" }] });
+          },
+        },
       ]
     );
   };
@@ -76,14 +83,16 @@ export default function ProfileScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
       keyboardVerticalOffset={90}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>{name.charAt(0).toUpperCase()}</Text>
+            <Text style={styles.avatarText}>
+              {name.charAt(0).toUpperCase()}
+            </Text>
           </View>
           <Text style={styles.userName}>{name}</Text>
         </View>
@@ -115,7 +124,11 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Adresse</Text>
             <TextInput
-              style={[styles.input, styles.textArea, !isEditing && styles.inputDisabled]}
+              style={[
+                styles.input,
+                styles.textArea,
+                !isEditing && styles.inputDisabled,
+              ]}
               value={address}
               onChangeText={setAddress}
               editable={isEditing}
@@ -152,7 +165,10 @@ export default function ProfileScreen({ navigation }) {
               >
                 <Text style={styles.editButtonText}>✏️ Modifier le profil</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogout}
+              >
                 <Text style={styles.logoutButtonText}>🚪 Se déconnecter</Text>
               </TouchableOpacity>
             </>
@@ -181,7 +197,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 30,
     marginTop: 20,
   },
@@ -190,10 +206,10 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -201,20 +217,20 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 42,
-    fontWeight: 'bold',
-    color: 'white',
+    fontWeight: "bold",
+    color: "white",
   },
   userName: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
   },
   section: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -225,7 +241,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textSecondary,
     marginBottom: 8,
   },
@@ -236,15 +252,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: "#E5E7EB",
   },
   inputDisabled: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: "#F9FAFB",
     color: colors.textSecondary,
   },
   textArea: {
     minHeight: 80,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
   },
   buttonContainer: {
     gap: 12,
@@ -253,7 +269,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -261,15 +277,15 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   editButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   saveButton: {
     backgroundColor: colors.primary,
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -277,44 +293,44 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   saveButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   cancelButton: {
-    backgroundColor: '#E5E7EB',
+    backgroundColor: "#E5E7EB",
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   cancelButtonText: {
     color: colors.text,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   logoutButton: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: "#FEE2E2",
     borderRadius: 12,
     padding: 16,
-    alignItems: 'center',
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: "#FCA5A5",
   },
   logoutButtonText: {
-    color: '#DC2626',
+    color: "#DC2626",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
