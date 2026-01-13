@@ -8,26 +8,59 @@ A React Native mobile application developed as a school project. The app provide
 
 ## 📸 App Screenshots
 
+### 🛍️ Client Side
 <div align="center">
   <table>
     <tr>
       <td align="center">
-        <img src="./assets/home.png" alt="Home Screen" width="300" />
-        <p><b>Home Screen</b></p>
+        <img src="./assets/acceuile.jpeg" alt="Home Screen" width="250" />
+        <p><b>🏠 Home Screen</b></p>
       </td>
       <td align="center">
-        <img src="./assets/categories.png" alt="Categories" width="300" />
-        <p><b>Categories</b></p>
+        <img src="./assets/panoer-client.jpeg" alt="Shopping Cart" width="250" />
+        <p><b>🛒 Shopping Cart</b></p>
+      </td>
+      <td align="center">
+        <img src="./assets/profile client.jpeg" alt="User Profile" width="250" />
+        <p><b>👤 User Profile</b></p>
+      </td>
+      <td align="center">
+        <img src="./assets/splash.png" alt="Splash Screen" width="250" />
+        <p><b>✨ Splash Screen</b></p>
+      </td>
+    </tr>
+  </table>
+</div>
+
+### 📊 Admin Panel
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="./assets/stats-admin.jpeg" alt="Statistics Dashboard" width="250" />
+        <p><b>📈 Statistics Dashboard</b></p>
+      </td>
+      <td align="center">
+        <img src="./assets/commande-admin.jpeg" alt="Order Management" width="250" />
+        <p><b>📦 Order Management</b></p>
+      </td>
+      <td align="center">
+        <img src="./assets/produit-admin.jpeg" alt="Product Management" width="250" />
+        <p><b>🥗 Product Management</b></p>
       </td>
     </tr>
     <tr>
       <td align="center">
-        <img src="./assets/checkout.png" alt="Checkout Screen" width="300" />
-        <p><b>Checkout Screen</b></p>
+        <img src="./assets/user-admin.jpeg" alt="User Management" width="250" />
+        <p><b>👥 User Management</b></p>
       </td>
       <td align="center">
-        <img src="./assets/splash.png" alt="Splash Screen" width="300" />
-        <p><b>Splash Screen</b></p>
+        <img src="./assets/orders-admin.jpeg" alt="Orders Overview" width="250" />
+        <p><b>📋 Orders Overview</b></p>
+      </td>
+      <td align="center">
+        <img src="./assets/splash.png" alt="Splash Screen" width="250" />
+        <p><b>✨ Splash Screen</b></p>
       </td>
     </tr>
   </table>
@@ -41,12 +74,24 @@ A React Native mobile application developed as a school project. The app provide
 
 ### Key Features
 
+#### 🛍️ Client Features
 - ✅ Browse healthy vegetarian food products
 - ✅ Category-based product filtering
-- ✅ Shopping cart management
+- ✅ Shopping cart management with real-time updates
+- ✅ User profile and account management
 - ✅ Checkout with customer information form
-- ✅ Splash screen with animation
+- ✅ Order history and tracking
+- ✅ Custom alerts and notifications
 - ✅ Responsive design optimized for mobile and web
+
+#### 👨‍💼 Admin Features
+- ✅ Real-time statistics dashboard
+- ✅ Complete order management system
+- ✅ Product inventory management
+- ✅ User management panel
+- ✅ Sales analytics and reports
+- ✅ SQLite database integration
+- ✅ Secure admin authentication
 
 ---
 
@@ -54,28 +99,43 @@ A React Native mobile application developed as a school project. The app provide
 
 - **Framework**: React Native with Expo
 - **Language**: JavaScript
-- **Navigation**: React Navigation
+- **Navigation**: React Navigation (Stack + Bottom Tabs)
+- **Database**: SQLite (expo-sqlite)
+- **State Management**: React Context API
+- **Storage**: AsyncStorage for user persistence
+- **UI Components**: Custom alert system with modal designs
 
 ---
 
 ## 📁 Project Structure
 
 ```
-reactNat/
+agree---ReactNative/
 ├── src/
 │   ├── screens/
-│   │   ├── SplashScreen.js      # Animated splash screen
-│   │   ├── HomeScreen.js        # Main product listing and categories
-│   │   └── CheckoutScreen.js    # Order checkout and payment
+│   │   ├── SplashScreen.js       # Animated splash screen
+│   │   ├── HomeScreen.js         # Main product listing and categories
+│   │   ├── CheckoutScreen.js     # Order checkout and customer info
+│   │   ├── ProfileScreen.js      # User profile management
+│   │   ├── OrdersScreen.js       # Order history and tracking
+│   │   ├── AdminScreen.js        # Admin dashboard and management
+│   │   └── AdminLoginScreen.js   # Secure admin authentication
+│   ├── components/
+│   │   └── CustomAlert.js        # Custom modal alert system
+│   ├── context/
+│   │   ├── CartContext.js        # Shopping cart state management
+│   │   └── UserContext.js        # User authentication and data
+│   ├── services/
+│   │   └── database.js           # SQLite database operations
 │   ├── constants/
-│   │   └── colors.js            # App color theme
+│   │   └── colors.js             # App color theme
 │   └── data/
 │       └── productsData.js       # Product database
-├── assets/                       # Images and static assets
-├── App.js                        # Main app component
-├── app.json                      # Expo configuration
-├── package.json                  # Dependencies
-└── README.md                     # This file
+├── assets/                        # Images and screenshots
+├── App.js                         # Main app component with navigation
+├── app.json                       # Expo configuration
+├── package.json                   # Dependencies
+└── README.md                      # Documentation
 ```
 
 ---
@@ -170,9 +230,9 @@ The app uses a healthy, natural color palette featuring:
 
 ---
 
-## 👨‍💼 Author
+## 👨‍💼 Authors
 
-School Project - Haytam Raba G9
+School Project - **Haytam Raba** & **Wassim Lazim** - G9
 
 ---
 
