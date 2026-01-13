@@ -1,8 +1,8 @@
-# Agree - Healthy Vegetarian Food Delivery App
+# 🌿 Agree - Healthy Vegetarian Food Delivery App
 
 ## 📚 School Project
 
-A React Native mobile application developed as a school project. The app provides a platform for ordering healthy vegetarian meals.
+A React Native mobile application developed as a school project. The app provides a modern and intuitive platform for ordering healthy vegetarian meals with real-time order management and admin panel.
 
 ---
 
