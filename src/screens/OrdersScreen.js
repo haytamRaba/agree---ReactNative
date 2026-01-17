@@ -1,180 +1,210 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  RefreshControl,
   ActivityIndicator,
+  Alert,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { COLORS } from "../constants/colors";
-import { getAllOrders, getOrderDetails, getStats } from "../services/database";
+import { useUser } from "../context/UserContext";
+import {
+  getOrdersByPhone,
+  getOrderDetails,
+  updateOrderStatus,
+} from "../services/database";
 
 export default function OrdersScreen({ navigation }) {
+  const { user } = useUser();
   const [orders, setOrders] = useState([]);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
-  useEffect(() => {
-    loadOrders();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [user]),
+  );
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     try {
-      const dbOrders = getAllOrders();
-      const dbStats = getStats();
-      setOrders(dbOrders);
-      setStats(dbStats);
-      setLoading(false);
-      setRefreshing(false);
+      setLoading(true);
+      if (user && user.phone) {
+        const userOrders = getOrdersByPhone(user.phone);
+        setOrders(userOrders || []);
+      }
     } catch (error) {
-      console.error("Erreur lors du chargement des commandes:", error);
+      console.error("Erreur chargement commandes:", error);
+      Alert.alert("Erreur", "Impossible de charger les commandes");
+    } finally {
       setLoading(false);
-      setRefreshing(false);
     }
-  };
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadOrders();
-  };
+  }, [user]);
 
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
-        return "#FFA500";
-      case "completed":
-        return COLORS.primary;
+        return "#FF9800";
+      case "confirmed":
+        return "#2196F3";
+      case "in-delivery":
+        return "#9C27B0";
+      case "delivered":
+        return "#4CAF50";
       case "cancelled":
-        return "#FF0000";
+        return "#F44336";
       default:
-        return COLORS.gray;
+        return COLORS.textSecondary;
     }
   };
 
-  const getStatusText = (status) => {
-    switch (status) {
-      case "pending":
-        return "En attente";
-      case "completed":
-        return "Complétée";
-      case "cancelled":
-        return "Annulée";
-      default:
-        return status;
-    }
+  const getStatusLabel = (status) => {
+    const labels = {
+      pending: "⏳ En Attente",
+      confirmed: "✓ Confirmée",
+      "in-delivery": "🚚 En Livraison",
+      delivered: "✓ Livrée",
+      cancelled: "✕ Annulée",
+    };
+    return labels[status] || status;
   };
 
-  if (loading) {
+  const handleStatusUpdate = (orderId, currentStatus) => {
+    const nextStatuses = {
+      pending: "confirmed",
+      confirmed: "in-delivery",
+      "in-delivery": "delivered",
+      delivered: "delivered",
+      cancelled: "cancelled",
+    };
+
+    const newStatus = nextStatuses[currentStatus];
+    if (newStatus === currentStatus) {
+      Alert.alert("Info", "Cette commande est finalisée");
+      return;
+    }
+
+    Alert.alert(
+      "Confirmation",
+      `Mettre à jour le statut à "${getStatusLabel(newStatus)}" ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Confirmer",
+          onPress: () => {
+            updateOrderStatus(orderId, newStatus);
+            loadOrders();
+            Alert.alert("Succès", "Statut mis à jour");
+          },
+        },
+      ],
+    );
+  };
+
+  if (!user) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Chargement des commandes...</Text>
+      <View style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>📋</Text>
+          <Text style={styles.emptyText}>
+            Veuillez vous connecter pour voir vos commandes
+          </Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => navigation.navigate("Home")}
+          >
+            <Text style={styles.loginButtonText}>Retour</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Statistiques */}
-      {stats && (
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.totalOrders}</Text>
-            <Text style={styles.statLabel}>Commandes</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>
-              DH{stats.totalRevenue.toFixed(2)}
-            </Text>
-            <Text style={styles.statLabel}>Revenue</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.totalCustomers}</Text>
-            <Text style={styles.statLabel}>Clients</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.pendingOrders}</Text>
-            <Text style={styles.statLabel}>En attente</Text>
-          </View>
-        </View>
-      )}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>📋 Mes Commandes</Text>
+      </View>
 
-      {/* Liste des commandes */}
-      <ScrollView
-        style={styles.ordersList}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <Text style={styles.sectionTitle}>Toutes les commandes</Text>
-
-        {orders.length === 0 ? (
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>Chargement des commandes...</Text>
+          </View>
+        ) : orders.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>😊</Text>
-            <Text style={styles.emptyTitle}>Aucune commande</Text>
-            <Text style={styles.emptySubtitle}>
-              Les commandes apparaîtront ici
-            </Text>
+            <Text style={styles.emptyIcon}>📦</Text>
+            <Text style={styles.emptyText}>Aucune commande</Text>
           </View>
         ) : (
-          orders.map((order) => (
-            <TouchableOpacity
-              key={order.id}
-              style={styles.orderCard}
-              onPress={() => {
-                // Vous pouvez naviguer vers les détails de la commande
-                const details = getOrderDetails(order.id);
-                console.log("Détails de la commande:", details);
-              }}
-            >
-              <View style={styles.orderHeader}>
-                <View>
-                  <Text style={styles.orderNumber}>Commande #{order.id}</Text>
-                  <Text style={styles.orderCustomer}>
-                    {order.first_name} {order.last_name}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: getStatusColor(order.status) + "20" },
-                  ]}
-                >
-                  <Text
+          orders.map((order) => {
+            const details = getOrderDetails(order.id);
+
+            return (
+              <TouchableOpacity
+                key={order.id}
+                style={styles.orderCard}
+                onPress={() =>
+                  setSelectedOrder(
+                    selectedOrder?.id === order.id ? null : order,
+                  )
+                }
+              >
+                <View style={styles.orderHeader}>
+                  <Text style={styles.orderId}>Commande #{order.id}</Text>
+                  <View
                     style={[
-                      styles.statusText,
-                      { color: getStatusColor(order.status) },
+                      styles.statusBadge,
+                      { backgroundColor: getStatusColor(order.status) },
                     ]}
                   >
-                    {getStatusText(order.status)}
-                  </Text>
+                    <Text style={styles.statusText}>
+                      {getStatusLabel(order.status)}
+                    </Text>
+                  </View>
                 </View>
-              </View>
 
-              <View style={styles.orderInfo}>
-                <Text style={styles.orderInfoText}>📞 {order.phone}</Text>
-                <Text style={styles.orderInfoText}>📍 {order.address}</Text>
-              </View>
-
-              <View style={styles.orderFooter}>
                 <Text style={styles.orderDate}>
+                  📅{" "}
                   {new Date(order.created_at).toLocaleDateString("fr-FR", {
-                    day: "2-digit",
-                    month: "short",
                     year: "numeric",
+                    month: "long",
+                    day: "numeric",
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
                 </Text>
                 <Text style={styles.orderTotal}>
-                  DH{order.total_amount.toFixed(2)}
+                  💰 Total: DH{" "}
+                  {order.total_amount ? order.total_amount.toFixed(2) : "0.00"}
                 </Text>
-              </View>
-            </TouchableOpacity>
-          ))
+
+                {selectedOrder?.id === order.id && details?.items && (
+                  <View style={styles.orderDetails}>
+                    <Text style={styles.detailsTitle}>
+                      📦 Articles commandés ({details.items.length}):
+                    </Text>
+                    {details.items.map((item, index) => (
+                      <View key={index} style={styles.itemRow}>
+                        <Text style={styles.itemIcon}>{item.image}</Text>
+                        <View style={styles.itemInfo}>
+                          <Text style={styles.itemName}>{item.name}</Text>
+                          <Text style={styles.itemDetails}>
+                            {item.quantity}x DH{item.price.toFixed(2)} = DH
+                            {(item.quantity * item.price).toFixed(2)}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })
         )}
       </ScrollView>
     </View>
@@ -186,128 +216,188 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  centerContent: {
+  header: {
+    backgroundColor: COLORS.white,
+    padding: 20,
+    paddingTop: 50,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: COLORS.textPrimary,
+  },
+  loadingContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 50,
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
     color: COLORS.textSecondary,
   },
-  statsContainer: {
-    flexDirection: "row",
-    padding: 15,
-    backgroundColor: COLORS.white,
-    marginBottom: 10,
-  },
-  statCard: {
-    flex: 1,
+  emptyContainer: {
     alignItems: "center",
-    padding: 10,
+    paddingVertical: 60,
   },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    marginBottom: 5,
+  emptyIcon: {
+    fontSize: 80,
+    marginBottom: 20,
   },
-  statLabel: {
-    fontSize: 12,
+  emptyText: {
+    fontSize: 16,
     color: COLORS.textSecondary,
+    marginBottom: 20,
     textAlign: "center",
   },
-  ordersList: {
-    flex: 1,
+  loginButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 20,
   },
-  sectionTitle: {
-    fontSize: 20,
+  loginButtonText: {
+    color: COLORS.white,
+    fontWeight: "bold",
+  },
+  shopButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 20,
+  },
+  shopButtonText: {
+    color: COLORS.white,
+    fontWeight: "bold",
+  },
+  orderId: {
+    fontSize: 16,
     fontWeight: "bold",
     color: COLORS.textPrimary,
-    padding: 20,
-    paddingBottom: 10,
+  },
+  orderTotal: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: COLORS.primary,
+    marginTop: 8,
+  },
+  detailsText: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+  },
+  ordersContainer: {
+    padding: 15,
   },
   orderCard: {
     backgroundColor: COLORS.white,
-    marginHorizontal: 15,
-    marginBottom: 15,
     borderRadius: 12,
     padding: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
   },
   orderHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 10,
+    alignItems: "center",
+    marginBottom: 12,
   },
   orderNumber: {
     fontSize: 16,
     fontWeight: "bold",
     color: COLORS.textPrimary,
-    marginBottom: 4,
   },
-  orderCustomer: {
-    fontSize: 14,
+  orderDate: {
+    fontSize: 12,
     color: COLORS.textSecondary,
+    marginTop: 4,
   },
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 15,
   },
   statusText: {
+    color: COLORS.white,
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "bold",
   },
-  orderInfo: {
-    marginBottom: 10,
-    gap: 5,
-  },
-  orderInfoText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginBottom: 3,
-  },
-  orderFooter: {
+  orderAmount: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 10,
+    paddingVertical: 10,
     borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
   },
-  orderDate: {
-    fontSize: 12,
-    color: COLORS.gray,
+  amountLabel: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
   },
-  orderTotal: {
+  amountValue: {
     fontSize: 18,
     fontWeight: "bold",
     color: COLORS.primary,
   },
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 40,
+  orderDetails: {
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
   },
-  emptyText: {
-    fontSize: 60,
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 20,
+  detailsTitle: {
+    fontSize: 14,
     fontWeight: "bold",
     color: COLORS.textPrimary,
     marginBottom: 10,
   },
-  emptySubtitle: {
+  itemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray + "30",
+  },
+  itemIcon: {
+    fontSize: 28,
+    marginRight: 12,
+    width: 40,
+  },
+  itemInfo: {
+    flex: 1,
+  },
+  itemName: {
     fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  itemDetails: {
+    fontSize: 12,
     color: COLORS.textSecondary,
+  },
+  detailText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: 6,
+  },
+  updateButton: {
+    marginTop: 10,
+    backgroundColor: COLORS.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+  },
+  updateButtonText: {
+    color: COLORS.white,
+    fontWeight: "bold",
+    fontSize: 12,
     textAlign: "center",
   },
 });

@@ -9,6 +9,7 @@ A React Native mobile application developed as a school project. The app provide
 ## 📸 App Screenshots
 
 ### 🛍️ Client Side
+
 <div align="center">
   <table>
     <tr>
@@ -33,6 +34,7 @@ A React Native mobile application developed as a school project. The app provide
 </div>
 
 ### 📊 Admin Panel
+
 <div align="center">
   <table>
     <tr>
@@ -75,35 +77,43 @@ A React Native mobile application developed as a school project. The app provide
 ### Key Features
 
 #### 🛍️ Client Features
+
 - ✅ Browse healthy vegetarian food products
 - ✅ Category-based product filtering
 - ✅ Shopping cart management with real-time updates
-- ✅ User profile and account management
-- ✅ Checkout with customer information form
-- ✅ Order history and tracking
+- ✅ User profile and account management with auto-login
+- ✅ Checkout with customer information form (auto-filled from profile)
+- ✅ Order history and tracking with detailed product information
 - ✅ Custom alerts and notifications
 - ✅ Responsive design optimized for mobile and web
+- ✅ Bottom tab navigation for easy access
+- ✅ Click-to-call functionality for customer support
 
 #### 👨‍💼 Admin Features
-- ✅ Real-time statistics dashboard
-- ✅ Complete order management system
+
+- ✅ Real-time statistics dashboard with revenue and order metrics
+- ✅ Complete order management system with customer details
 - ✅ Product inventory management
-- ✅ User management panel
+- ✅ Client management panel with contact information
 - ✅ Sales analytics and reports
-- ✅ SQLite database integration
+- ✅ SQLite database integration with web compatibility (mock data fallback)
+- ✅ Auto-refresh data when switching between tabs
 - ✅ Secure admin authentication
+- ✅ Mobile-optimized responsive layout
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Framework**: React Native with Expo
+- **Framework**: React Native with Expo SDK 54
 - **Language**: JavaScript
-- **Navigation**: React Navigation (Stack + Bottom Tabs)
-- **Database**: SQLite (expo-sqlite)
-- **State Management**: React Context API
-- **Storage**: AsyncStorage for user persistence
+- **Navigation**: React Navigation 7.x (Stack + Bottom Tabs)
+- **Database**: SQLite (expo-sqlite 16.0.10) with web mock data fallback
+- **State Management**: React Context API (CartContext, UserContext, ToastContext)
+- **Storage**: AsyncStorage for user session persistence
 - **UI Components**: Custom alert system with modal designs
+- **Lifecycle Management**: useFocusEffect for auto-refresh functionality
+- **Web Compatibility**: Platform detection with mock data system
 
 ---
 
@@ -115,24 +125,27 @@ agree---ReactNative/
 │   ├── screens/
 │   │   ├── SplashScreen.js       # Animated splash screen
 │   │   ├── HomeScreen.js         # Main product listing and categories
-│   │   ├── CheckoutScreen.js     # Order checkout and customer info
-│   │   ├── ProfileScreen.js      # User profile management
-│   │   ├── OrdersScreen.js       # Order history and tracking
-│   │   ├── AdminScreen.js        # Admin dashboard and management
+│   │   ├── CheckoutScreen.js     # Order checkout with auto-fill
+│   │   ├── ProfileScreen.js      # User profile and login
+│   │   ├── OrdersScreen.js       # Order history with product details
+│   │   ├── AdminScreen.js        # Admin dashboard (Stats, Products, Orders, Clients)
 │   │   └── AdminLoginScreen.js   # Secure admin authentication
 │   ├── components/
 │   │   └── CustomAlert.js        # Custom modal alert system
 │   ├── context/
 │   │   ├── CartContext.js        # Shopping cart state management
-│   │   └── UserContext.js        # User authentication and data
+│   │   ├── UserContext.js        # User authentication and session
+│   │   └── ToastContext.js       # Toast notifications
 │   ├── services/
-│   │   └── database.js           # SQLite database operations
+│   │   └── database.js           # SQLite operations + web mock data
 │   ├── constants/
 │   │   └── colors.js             # App color theme
 │   └── data/
 │       └── productsData.js       # Product database
 ├── assets/                        # Images and screenshots
-├── App.js                         # Main app component with navigation
+├── .github/
+│   └── copilot-instructions.md   # Project documentation
+├── App.js                         # Main app with navigation
 ├── app.json                       # Expo configuration
 ├── package.json                   # Dependencies
 └── README.md                      # Documentation
@@ -197,36 +210,86 @@ The app uses a healthy, natural color palette featuring:
 ### Navigation Flow
 
 1. **Splash Screen** - Animated introduction with app branding
-2. **Home Screen** - Browse products and categories
-3. **Cart** - Review selected items
-4. **Checkout** - Enter customer information and complete order
+2. **Home Screen** - Browse products and categories with bottom tab navigation
+3. **Cart** - Review selected items with quantity management
+4. **Checkout** - Auto-filled customer information from profile
+5. **Profile** - User login and session management
+6. **Orders** - View order history with detailed product information
+7. **Admin Panel** - Comprehensive dashboard with 4 tabs:
+   - **Stats**: Revenue, orders, and customer metrics
+   - **Products**: Inventory management
+   - **Orders**: Order tracking with customer details
+   - **Clients**: Customer database with contact info
 
 ---
 
 ## 📱 User Interface
 
-- **HomeScreen**: Displays popular products and categories for easy navigation
-- **CheckoutScreen**: Collects customer details (name, address, phone, email)
-- **Cart Functionality**: Add/remove items and view total price
+### Client Features
+- **HomeScreen**: Displays popular products and categories with intuitive navigation
+- **CheckoutScreen**: Auto-filled customer details from user profile (name, address, phone)
+- **Cart Functionality**: Add/remove items with real-time total calculation
+- **OrdersScreen**: Complete order history with product details, quantities, and timestamps
+- **ProfileScreen**: User login and account management with session persistence
+
+### Admin Panel
+- **Statistics Dashboard**: Real-time metrics for revenue, orders, and customer count
+- **Product Management**: Add, edit, and delete products from inventory
+- **Order Management**: View all orders with customer information and contact details
+- **Client Database**: Comprehensive customer list with phone, address, and registration date
+- **Responsive Layout**: Mobile-optimized design with proper spacing and alignment
 
 ---
 
 ## 💻 Development Notes
 
-- The app is built using Expo, which allows for quick development and testing across platforms
-- Navigation is managed with React Navigation for smooth screen transitions
+- The app is built using Expo SDK 54, which allows for quick development and testing across platforms
+- Navigation is managed with React Navigation 7.x for smooth screen transitions
 - Product data is stored locally in `productsData.js` for easy modification
+- SQLite database integration with automatic fallback to mock data for web compatibility
+- Context API used for state management (Cart, User, Toast)
+- Auto-refresh functionality using `useFocusEffect` hook
+- Mobile-optimized CSS with responsive layouts
+- Platform detection ensures compatibility across web, iOS, and Android
+
+### Database Architecture
+
+- **SQLite**: Used on native platforms (iOS/Android) with expo-sqlite
+- **Mock Data System**: Automatic fallback for web environments
+- **Tables**: customers, products, orders, order_items
+- **Auto-increment counters**: For mock data consistency
+- **Session persistence**: AsyncStorage for user login state
 
 ---
 
-## 🔄 Future Enhancements
+## 🔄 Recent Updates (January 2026)
+
+### Version 2.0 - Major Feature Release
+
+- ✅ **Admin Dashboard Overhaul**: Complete redesign with 4 tabs (Stats, Products, Orders, Clients)
+- ✅ **Web Compatibility**: Implemented mock data system for SQLite fallback on web
+- ✅ **Auto-Fill Checkout**: User profile data automatically populates checkout form
+- ✅ **Enhanced Order History**: Detailed product list with quantities and prices
+- ✅ **Client Management**: Admin panel now includes comprehensive customer database
+- ✅ **Auto-Refresh**: useFocusEffect ensures data stays synchronized
+- ✅ **Mobile Optimization**: Responsive CSS with improved layout for smaller screens
+- ✅ **Session Persistence**: AsyncStorage integration for user login state
+- ✅ **Click-to-Call**: Phone numbers in admin panel are interactive
+- ✅ **Bug Fixes**: Resolved CSS display issues and data synchronization problems
+
+---
+
+## 🔮 Future Enhancements
 
 - Integration with backend API for real-time product updates
-- User authentication and account management
-- Payment gateway integration
-- Order tracking system
-- User reviews and ratings
+- Push notifications for order status updates
+- Payment gateway integration (Stripe, PayPal)
+- Advanced order tracking with delivery status
+- User reviews and ratings system
 - Wishlist functionality
+- Multilingual support (French/English)
+- Dark mode theme
+- Export data to CSV/Excel for admin reports
 
 ---
 

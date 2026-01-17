@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { COLORS } from "../constants/colors";
 import {
@@ -15,64 +17,100 @@ import {
   createOrder,
   getCustomerByPhone,
 } from "../services/database";
+import { useCart } from "../context/CartContext";
+import { useUser } from "../context/UserContext";
+import {
+  validatePhone,
+  validateName,
+  validateAddress,
+  getValidationErrors,
+  formatPhoneDisplay,
+  sanitizeInput,
+} from "../services/validation";
 
-export default function CheckoutScreen({ route, navigation }) {
-  const [cart, setCart] = useState(route.params?.cart || []);
+export default function CheckoutScreen({ navigation }) {
+  const { cart, clearCart } = useCart();
+  const { user } = useUser();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  // Pré-remplir les champs si l'utilisateur est connecté
+  useEffect(() => {
+    if (user) {
+      // Diviser le nom complet en prénom et nom
+      const nameParts = user.name?.split(" ") || [];
+      setFirstName(nameParts[0] || "");
+      setLastName(nameParts.slice(1).join(" ") || "");
+      setPhone(user.phone || "");
+      setAddress(user.address || "");
+    }
+  }, [user]);
 
   const increaseQuantity = (productId) => {
-    setCart(
-      cart.map((item) =>
-        item.id === productId ? { ...item, quantity: item.quantity + 1 } : item
-      )
-    );
+    // Utiliser le context
   };
 
   const decreaseQuantity = (productId) => {
-    const item = cart.find((item) => item.id === productId);
-    if (item.quantity === 1) {
-      removeFromCart(productId);
-    } else {
-      setCart(
-        cart.map((item) =>
-          item.id === productId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        )
-      );
-    }
+    // Utiliser le context
   };
 
-  const removeFromCart = (productId) => {
-    setCart(cart.filter((item) => item.id !== productId));
-  };
-
-  const calculateTotal = () => {
+  const calculateTotal = useCallback(() => {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
-  };
+  }, [cart]);
 
-  const handlePlaceOrder = async () => {
-    if (!firstName || !lastName || !phone || !address) {
-      Alert.alert("Erreur", "Veuillez remplir tous les champs");
+  const validateForm = useCallback(() => {
+    const formData = {
+      firstName: sanitizeInput(firstName),
+      lastName: sanitizeInput(lastName),
+      phone: phone.replace(/\s/g, ""),
+      address: sanitizeInput(address),
+      city: sanitizeInput(city),
+      postalCode: postalCode.trim(),
+    };
+
+    const newErrors = getValidationErrors(formData);
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return false;
+    }
+
+    setErrors({});
+    return true;
+  }, [firstName, lastName, phone, address, city, postalCode]);
+
+  const handlePlaceOrder = useCallback(async () => {
+    if (cart.length === 0) {
+      Alert.alert("Erreur", "Votre panier est vide");
+      return;
+    }
+
+    if (!validateForm()) {
       return;
     }
 
     setLoading(true);
 
     try {
-      // Vérifier si le client existe déjà
-      let customer = getCustomerByPhone(phone);
+      const phoneFormatted = phone.replace(/\s/g, "");
+      let customer = getCustomerByPhone(phoneFormatted);
       let customerId;
 
       if (customer) {
         customerId = customer.id;
       } else {
-        // Créer un nouveau client
-        customerId = addCustomer(firstName, lastName, phone, address);
+        customerId = addCustomer(
+          sanitizeInput(firstName),
+          sanitizeInput(lastName),
+          phoneFormatted,
+          sanitizeInput(address),
+        );
       }
 
       if (!customerId) {
@@ -81,40 +119,52 @@ export default function CheckoutScreen({ route, navigation }) {
         return;
       }
 
-      // Créer la commande
       const orderId = createOrder(customerId, cart, calculateTotal());
-
-      setLoading(false);
 
       if (orderId) {
         Alert.alert(
-          "Commande Confirmée! 🎉",
-          `Merci ${firstName} ${lastName}!\nCommande #${orderId}\nMontant: DH${calculateTotal().toFixed(
-            2
-          )}\n\nVotre commande sera livrée sous peu.`,
+          "✅ Commande Confirmée!",
+          `Merci ${firstName} ${lastName}!\n\nCommande #${orderId}\nMontant: DH${calculateTotal().toFixed(2)}\n\nVotre commande sera livrée à:\n${address}, ${city}\n\nLivraison sous 30-45 minutes.`,
           [
             {
-              text: "OK",
-              onPress: () => {
-                // Vider le panier et retourner à l'accueil
-                navigation.navigate("Home", { clearCart: true });
+              text: "Excellent!",
+              onPress: async () => {
+                await clearCart();
+                navigation.navigate("Home");
               },
             },
-          ]
+          ],
         );
       } else {
         Alert.alert("Erreur", "Impossible de créer la commande");
       }
     } catch (error) {
-      setLoading(false);
       Alert.alert("Erreur", "Une erreur est survenue: " + error.message);
       console.error("Erreur lors de la création de la commande:", error);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [
+    cart,
+    firstName,
+    lastName,
+    phone,
+    address,
+    city,
+    validateForm,
+    calculateTotal,
+    clearCart,
+    navigation,
+  ]);
+
+  const total = useMemo(() => calculateTotal(), [calculateTotal]);
+  const hasErrors = Object.keys(errors).length > 0;
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -122,136 +172,243 @@ export default function CheckoutScreen({ route, navigation }) {
         >
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>🛒 Checkout</Text>
+        <Text style={styles.headerTitle}>🛒 Commander</Text>
         <View style={styles.headerPlaceholder} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Order Summary */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Order Summary</Text>
-          {cart.length === 0 ? (
-            <Text style={styles.emptyText}>Your cart is empty</Text>
-          ) : (
-            cart.map((item) => (
-              <View key={item.id} style={styles.cartItem}>
-                <Text style={styles.cartItemImage}>{item.image}</Text>
-                <View style={styles.cartItemInfo}>
-                  <Text style={styles.cartItemName}>{item.name}</Text>
-                  <Text style={styles.cartItemPrice}>
-                    DH{item.price} x {item.quantity}
-                  </Text>
-                </View>
-                <View style={styles.quantityControls}>
-                  <TouchableOpacity
-                    style={styles.quantityButton}
-                    onPress={() => decreaseQuantity(item.id)}
-                  >
-                    <Text style={styles.quantityButtonText}>−</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.quantityText}>{item.quantity}</Text>
-                  <TouchableOpacity
-                    style={styles.quantityButton}
-                    onPress={() => increaseQuantity(item.id)}
-                  >
-                    <Text style={styles.quantityButtonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => removeFromCart(item.id)}
-                >
-                  <Text style={styles.deleteButtonText}>🗑️</Text>
-                </TouchableOpacity>
-                <Text style={styles.cartItemTotal}>
-                  DH{(item.price * item.quantity).toFixed(2)}
+        {cart.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>🛒</Text>
+            <Text style={styles.emptyHeading}>Votre panier est vide</Text>
+            <Text style={styles.emptyText}>
+              Explorez nos délicieux produits et ajoutez-les à votre panier
+            </Text>
+            <TouchableOpacity
+              style={styles.continueShoppingButton}
+              onPress={() => navigation.navigate("Home")}
+            >
+              <Text style={styles.continueShoppingText}>
+                Continuer le shopping
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            {/* Order Summary */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Résumé de la Commande</Text>
+                <Text style={styles.itemCount}>
+                  {cart.length} article{cart.length > 1 ? "s" : ""}
                 </Text>
               </View>
-            ))
-          )}
-        </View>
 
-        {/* Customer Information Form */}
-        {cart.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Delivery Information</Text>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>First Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your first name"
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholderTextColor={COLORS.gray}
-              />
+              {cart.map((item) => (
+                <View key={item.id} style={styles.cartItem}>
+                  <Text style={styles.cartItemImage}>{item.image}</Text>
+                  <View style={styles.cartItemInfo}>
+                    <Text style={styles.cartItemName}>{item.name}</Text>
+                    <Text style={styles.cartItemDescription}>
+                      {item.description}
+                    </Text>
+                    <Text style={styles.cartItemPrice}>
+                      DH{(item.price * item.quantity).toFixed(2)}
+                    </Text>
+                  </View>
+                  <View style={styles.quantityBadge}>
+                    <Text style={styles.quantityBadgeText}>
+                      x{item.quantity}
+                    </Text>
+                  </View>
+                </View>
+              ))}
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Last Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your last name"
-                value={lastName}
-                onChangeText={setLastName}
-                placeholderTextColor={COLORS.gray}
-              />
+            {/* Delivery Information Form */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Informations de Livraison</Text>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Prénom</Text>
+                <TextInput
+                  style={[styles.input, errors.firstName && styles.inputError]}
+                  placeholder="Votre prénom"
+                  value={firstName}
+                  onChangeText={(text) => {
+                    setFirstName(text);
+                    if (errors.firstName) {
+                      const newErrors = { ...errors };
+                      delete newErrors.firstName;
+                      setErrors(newErrors);
+                    }
+                  }}
+                  placeholderTextColor={COLORS.textSecondary}
+                />
+                {errors.firstName && (
+                  <Text style={styles.errorText}>{errors.firstName}</Text>
+                )}
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Nom</Text>
+                <TextInput
+                  style={[styles.input, errors.lastName && styles.inputError]}
+                  placeholder="Votre nom"
+                  value={lastName}
+                  onChangeText={(text) => {
+                    setLastName(text);
+                    if (errors.lastName) {
+                      const newErrors = { ...errors };
+                      delete newErrors.lastName;
+                      setErrors(newErrors);
+                    }
+                  }}
+                  placeholderTextColor={COLORS.textSecondary}
+                />
+                {errors.lastName && (
+                  <Text style={styles.errorText}>{errors.lastName}</Text>
+                )}
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Téléphone</Text>
+                <TextInput
+                  style={[styles.input, errors.phone && styles.inputError]}
+                  placeholder="06XX XXXX XX"
+                  value={phone}
+                  onChangeText={(text) => {
+                    setPhone(text);
+                    if (errors.phone) {
+                      const newErrors = { ...errors };
+                      delete newErrors.phone;
+                      setErrors(newErrors);
+                    }
+                  }}
+                  keyboardType="phone-pad"
+                  placeholderTextColor={COLORS.textSecondary}
+                />
+                {errors.phone && (
+                  <Text style={styles.errorText}>{errors.phone}</Text>
+                )}
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Adresse de Livraison</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.textArea,
+                    errors.address && styles.inputError,
+                  ]}
+                  placeholder="Votre adresse complète"
+                  value={address}
+                  onChangeText={(text) => {
+                    setAddress(text);
+                    if (errors.address) {
+                      const newErrors = { ...errors };
+                      delete newErrors.address;
+                      setErrors(newErrors);
+                    }
+                  }}
+                  multiline
+                  numberOfLines={3}
+                  placeholderTextColor={COLORS.textSecondary}
+                />
+                {errors.address && (
+                  <Text style={styles.errorText}>{errors.address}</Text>
+                )}
+              </View>
+
+              <View style={styles.rowContainer}>
+                <View style={[styles.formGroup, styles.halfWidth]}>
+                  <Text style={styles.label}>Ville</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Ville"
+                    value={city}
+                    onChangeText={setCity}
+                    placeholderTextColor={COLORS.textSecondary}
+                  />
+                </View>
+
+                <View style={[styles.formGroup, styles.halfWidth]}>
+                  <Text style={styles.label}>Code Postal</Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      errors.postalCode && styles.inputError,
+                    ]}
+                    placeholder="Code"
+                    value={postalCode}
+                    onChangeText={(text) => {
+                      setPostalCode(text);
+                      if (errors.postalCode) {
+                        const newErrors = { ...errors };
+                        delete newErrors.postalCode;
+                        setErrors(newErrors);
+                      }
+                    }}
+                    keyboardType="number-pad"
+                    placeholderTextColor={COLORS.textSecondary}
+                  />
+                  {errors.postalCode && (
+                    <Text style={styles.errorText}>{errors.postalCode}</Text>
+                  )}
+                </View>
+              </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Phone Number</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your phone number"
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                placeholderTextColor={COLORS.gray}
-              />
+            {/* Total and Order Button */}
+            <View style={styles.totalSection}>
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Sous-total:</Text>
+                <Text style={styles.totalValue}>DH{total.toFixed(2)}</Text>
+              </View>
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Livraison:</Text>
+                <Text style={styles.totalValue}>Gratuite</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.totalRow}>
+                <Text style={styles.finalTotal}>TOTAL:</Text>
+                <Text style={styles.finalTotalAmount}>
+                  DH{total.toFixed(2)}
+                </Text>
+              </View>
             </View>
 
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Delivery Address</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder="Enter your delivery address"
-                value={address}
-                onChangeText={setAddress}
-                multiline
-                numberOfLines={3}
-                placeholderTextColor={COLORS.gray}
-              />
-            </View>
-          </View>
+            <View style={styles.spacing} />
+          </>
         )}
       </ScrollView>
 
-      {/* Footer with Total and Place Order Button */}
       {cart.length > 0 && (
         <View style={styles.footer}>
-          <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.totalAmount}>
-              DH{calculateTotal().toFixed(2)}
-            </Text>
-          </View>
           <TouchableOpacity
             style={[
               styles.placeOrderButton,
-              loading && styles.placeOrderButtonDisabled,
+              (loading || hasErrors) && styles.placeOrderButtonDisabled,
             ]}
             onPress={handlePlaceOrder}
-            disabled={loading}
+            disabled={loading || hasErrors}
           >
             {loading ? (
-              <ActivityIndicator color={COLORS.white} />
+              <ActivityIndicator color={COLORS.white} size="small" />
             ) : (
-              <Text style={styles.placeOrderButtonText}>Place Order</Text>
+              <>
+                <Text style={styles.placeOrderButtonText}>
+                  Confirmer la Commande
+                </Text>
+                <Text style={styles.placeOrderButtonSubtext}>
+                  DH{total.toFixed(2)}
+                </Text>
+              </>
             )}
           </TouchableOpacity>
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

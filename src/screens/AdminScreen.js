@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,10 +11,12 @@ import {
   Modal,
   Linking,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { COLORS } from "../constants/colors";
 import {
   getAllProducts,
   getAllOrders,
+  getAllCustomers,
   getStats,
   getOrderDetails,
   addProduct,
@@ -36,6 +38,7 @@ export default function AdminScreen({ navigation }) {
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
   // Modal pour ajouter un produit
@@ -69,16 +72,31 @@ export default function AdminScreen({ navigation }) {
       const dbStats = getStats();
       const dbProducts = getAllProducts();
       const dbOrders = getAllOrders();
+      const dbCustomers = getAllCustomers();
+
+      console.log("📊 Stats:", dbStats);
+      console.log("🥗 Products:", dbProducts?.length || 0);
+      console.log("📦 Orders:", dbOrders?.length || 0);
+      console.log("👥 Customers:", dbCustomers?.length || 0);
 
       setStats(dbStats);
-      setProducts(dbProducts);
-      setOrders(dbOrders);
+      setProducts(dbProducts || []);
+      setOrders(dbOrders || []);
+      setCustomers(dbCustomers || []);
       setRefreshing(false);
     } catch (error) {
       console.error("Erreur chargement données:", error);
       setRefreshing(false);
     }
   };
+
+  // Recharger les données quand on revient sur l'écran
+  useFocusEffect(
+    useCallback(() => {
+      console.log("🔄 AdminScreen focus - rechargement des données");
+      loadData();
+    }, [])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -95,7 +113,7 @@ export default function AdminScreen({ navigation }) {
         } else {
           Alert.alert(
             "Erreur",
-            "Impossible de passer un appel sur cet appareil"
+            "Impossible de passer un appel sur cet appareil",
           );
         }
       })
@@ -130,7 +148,7 @@ export default function AdminScreen({ navigation }) {
     Alert.alert(
       "Changer le statut",
       "Sélectionnez le nouveau statut:",
-      buttons
+      buttons,
     );
   };
 
@@ -157,7 +175,7 @@ export default function AdminScreen({ navigation }) {
       price,
       newProductImage,
       newProductCategory,
-      newProductDescription
+      newProductDescription,
     );
 
     if (productId) {
@@ -296,6 +314,19 @@ export default function AdminScreen({ navigation }) {
       ) : (
         orders.map((order) => {
           const details = getOrderDetails(order.id);
+
+          // Debug logs
+          console.log("🔍 Order ID:", order.id);
+          console.log("🔍 Total:", order.total_amount);
+          console.log("🔍 Details:", details);
+          console.log("🔍 Items:", details?.items?.length || 0);
+
+          // Vérifier si l'order est valide
+          if (!order || !order.id) {
+            console.log("⚠️ Commande invalide détectée");
+            return null;
+          }
+
           return (
             <View key={order.id} style={styles.dataCard}>
               <View style={styles.dataHeader}>
@@ -311,8 +342,8 @@ export default function AdminScreen({ navigation }) {
                           order.status === "pending"
                             ? "#FFA50020"
                             : order.status === "completed"
-                            ? "#4CAF5020"
-                            : "#FF000020",
+                              ? "#4CAF5020"
+                              : "#FF000020",
                       },
                     ]}
                   >
@@ -324,16 +355,16 @@ export default function AdminScreen({ navigation }) {
                             order.status === "pending"
                               ? "#FFA500"
                               : order.status === "completed"
-                              ? "#4CAF50"
-                              : "#FF0000",
+                                ? "#4CAF50"
+                                : "#FF0000",
                         },
                       ]}
                     >
                       {order.status === "pending"
                         ? "En attente"
                         : order.status === "completed"
-                        ? "Complétée"
-                        : "Annulée"}{" "}
+                          ? "Complétée"
+                          : "Annulée"}{" "}
                       📝
                     </Text>
                   </View>
@@ -341,7 +372,7 @@ export default function AdminScreen({ navigation }) {
               </View>
 
               <View style={styles.dataRow}>
-                <Text style={styles.dataLabel}>Client:</Text>
+                <Text style={styles.dataLabel}>👤 Client:</Text>
                 <Text style={styles.dataValue}>
                   {order.first_name} {order.last_name}
                 </Text>
@@ -349,36 +380,37 @@ export default function AdminScreen({ navigation }) {
 
               <TouchableOpacity onPress={() => handleCall(order.phone)}>
                 <View style={styles.dataRow}>
-                  <Text style={styles.dataLabel}>Téléphone:</Text>
+                  <Text style={styles.dataLabel}>📞 Téléphone:</Text>
                   <Text style={[styles.dataValue, styles.phoneLink]}>
-                    📞 {order.phone}
+                    {order.phone}
                   </Text>
                 </View>
               </TouchableOpacity>
 
               <View style={styles.dataRow}>
-                <Text style={styles.dataLabel}>Adresse:</Text>
+                <Text style={styles.dataLabel}>📍 Adresse:</Text>
                 <Text style={styles.dataValue}>{order.address}</Text>
               </View>
 
               <View style={styles.dataRow}>
-                <Text style={styles.dataLabel}>Montant:</Text>
+                <Text style={styles.dataLabel}>💰 Montant:</Text>
                 <Text style={styles.dataValueBold}>
-                  DH {order.total_amount.toFixed(2)}
+                  DH{" "}
+                  {order.total_amount ? order.total_amount.toFixed(2) : "0.00"}
                 </Text>
               </View>
 
               <View style={styles.dataRow}>
-                <Text style={styles.dataLabel}>Date:</Text>
+                <Text style={styles.dataLabel}>📅 Date:</Text>
                 <Text style={styles.dataValue}>
                   {new Date(order.created_at).toLocaleString("fr-FR")}
                 </Text>
               </View>
 
-              {details?.items && details.items.length > 0 && (
+              {details?.items && details.items.length > 0 ? (
                 <View style={styles.itemsSection}>
                   <Text style={styles.itemsTitle}>
-                    Articles (table: order_items):
+                    📦 Articles commandés ({details.items.length}):
                   </Text>
                   {details.items.map((item, index) => (
                     <View key={index} style={styles.orderItem}>
@@ -386,14 +418,88 @@ export default function AdminScreen({ navigation }) {
                       <View style={styles.orderItemInfo}>
                         <Text style={styles.orderItemName}>{item.name}</Text>
                         <Text style={styles.orderItemDetails}>
-                          {item.quantity}x DH{item.price} = DH
+                          {item.quantity}x DH{item.price.toFixed(2)} = DH
                           {(item.quantity * item.price).toFixed(2)}
                         </Text>
                       </View>
                     </View>
                   ))}
                 </View>
+              ) : (
+                <View style={styles.itemsSection}>
+                  <Text style={styles.emptyText}>
+                    ⚠️ Aucun article trouvé pour cette commande
+                  </Text>
+                  <Text style={styles.emptySubtext}>
+                    Vérifiez la table order_items dans la base de données
+                  </Text>
+                </View>
               )}
+            </View>
+          );
+        })
+      )}
+    </View>
+  );
+
+  const renderUsers = () => (
+    <View style={styles.tabContent}>
+      <Text style={styles.title}>👥 Clients en Base de Données</Text>
+      <Text style={styles.subtitle}>
+        Table: customers ({customers.length} entrées)
+      </Text>
+
+      {customers.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>👤</Text>
+          <Text style={styles.emptyText}>Aucun client pour le moment</Text>
+          <Text style={styles.emptySubtext}>
+            Les clients s'inscrivent lors du checkout
+          </Text>
+        </View>
+      ) : (
+        customers.map((customer) => {
+          // Vérifier si le client est valide
+          if (!customer || !customer.id) {
+            console.log("⚠️ Client invalide détecté");
+            return null;
+          }
+
+          return (
+            <View key={customer.id} style={styles.dataCard}>
+              <View style={styles.dataHeader}>
+                <Text style={styles.dataId}>Client #{customer.id}</Text>
+              </View>
+
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>👤 Nom:</Text>
+                <Text style={styles.dataValue}>
+                  {customer.first_name} {customer.last_name}
+                </Text>
+              </View>
+
+              <TouchableOpacity onPress={() => handleCall(customer.phone)}>
+                <View style={styles.dataRow}>
+                  <Text style={styles.dataLabel}>📞 Téléphone:</Text>
+                  <Text style={[styles.dataValue, styles.phoneLink]}>
+                    {customer.phone}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>📍 Adresse:</Text>
+                <Text style={styles.dataValue}>{customer.address}</Text>
+              </View>
+
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>📅 Inscription:</Text>
+                <Text style={styles.dataValue}>
+                  {customer.created_at
+                    ? new Date(customer.created_at).toLocaleString("fr-FR")
+                    : "Non disponible"}
+                </Text>
+              </View>
             </View>
           );
         })
@@ -452,6 +558,19 @@ export default function AdminScreen({ navigation }) {
             📦 Commandes
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "users" && styles.tabActive]}
+          onPress={() => setActiveTab("users")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "users" && styles.tabTextActive,
+            ]}
+          >
+            👥 Clients
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Content */}
@@ -464,6 +583,7 @@ export default function AdminScreen({ navigation }) {
         {activeTab === "stats" && renderStats()}
         {activeTab === "products" && renderProducts()}
         {activeTab === "orders" && renderOrders()}
+        {activeTab === "users" && renderUsers()}
       </ScrollView>
 
       {/* Modal pour ajouter un produit */}
@@ -616,7 +736,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabContent: {
-    padding: 15,
+    padding: 10,
   },
   title: {
     fontSize: 22,
@@ -632,14 +752,18 @@ const styles = StyleSheet.create({
   statCard: {
     backgroundColor: COLORS.white,
     padding: 20,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 15,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: COLORS.primary + "20",
+    width: "100%",
+    maxWidth: "100%",
   },
   statIcon: {
     fontSize: 40,
@@ -674,28 +798,31 @@ const styles = StyleSheet.create({
   },
   dataCard: {
     backgroundColor: COLORS.white,
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 20,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 5,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
   },
   dataHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 15,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 2,
     borderBottomColor: COLORS.lightGray,
   },
   dataId: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
     color: COLORS.primary,
+    letterSpacing: 0.5,
   },
   productIcon: {
     fontSize: 30,
@@ -703,17 +830,20 @@ const styles = StyleSheet.create({
   dataRow: {
     flexDirection: "row",
     marginBottom: 8,
+    alignItems: "flex-start",
   },
   dataLabel: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     color: COLORS.textSecondary,
-    width: 100,
+    width: 70,
+    flexShrink: 0,
   },
   dataValue: {
-    fontSize: 14,
+    fontSize: 13,
     color: COLORS.textPrimary,
     flex: 1,
+    flexWrap: "wrap",
   },
   dataValueBold: {
     fontSize: 16,
@@ -733,6 +863,7 @@ const styles = StyleSheet.create({
   phoneLink: {
     color: COLORS.primary,
     textDecorationLine: "underline",
+    fontWeight: "600",
   },
   headerRow: {
     flexDirection: "row",
@@ -855,58 +986,71 @@ const styles = StyleSheet.create({
   itemsSection: {
     marginTop: 15,
     paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.lightGray,
+    borderTopWidth: 2,
+    borderTopColor: COLORS.primary + "30",
+    width: "100%",
   },
   itemsTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "bold",
-    color: COLORS.textPrimary,
-    marginBottom: 10,
+    color: COLORS.primary,
+    marginBottom: 12,
   },
   orderItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     marginBottom: 10,
     backgroundColor: COLORS.background,
-    padding: 10,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 10,
+    width: "100%",
   },
   orderItemIcon: {
-    fontSize: 30,
-    marginRight: 10,
+    fontSize: 32,
+    marginRight: 12,
+    width: 40,
   },
   orderItemInfo: {
     flex: 1,
+    maxWidth: "100%",
   },
   orderItemName: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     color: COLORS.textPrimary,
-    marginBottom: 3,
+    marginBottom: 4,
   },
   orderItemDetails: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
+    fontWeight: "500",
   },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
     padding: 40,
+    backgroundColor: COLORS.background,
+    borderRadius: 16,
+    marginTop: 20,
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
+    borderStyle: "dashed",
   },
   emptyIcon: {
     fontSize: 60,
-    marginBottom: 20,
+    marginBottom: 15,
+    opacity: 0.5,
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
     color: COLORS.textPrimary,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
     color: COLORS.textSecondary,
     textAlign: "center",
+    lineHeight: 20,
   },
 });

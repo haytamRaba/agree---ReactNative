@@ -14,12 +14,18 @@ import CustomAlert from "../components/CustomAlert";
 import colors from "../constants/colors";
 
 export default function ProfileScreen({ navigation }) {
-  const { user, updateUser, logout } = useUser();
+  const { user, updateUser, logout, login } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
   const [phone, setPhone] = useState(user?.phone || "");
   const [address, setAddress] = useState(user?.address || "");
   const [alertConfig, setAlertConfig] = useState({ visible: false });
+
+  // Login form states
+  const [showLogin, setShowLogin] = useState(false);
+  const [loginName, setLoginName] = useState("");
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginAddress, setLoginAddress] = useState("");
 
   const showAlert = (title, message, type = "info", buttons = []) => {
     setAlertConfig({
@@ -68,16 +74,141 @@ export default function ProfileScreen({ navigation }) {
             navigation.reset({ index: 0, routes: [{ name: "Home" }] });
           },
         },
-      ]
+      ],
     );
+  };
+
+  const handleLogin = async () => {
+    if (!loginName || !loginPhone || !loginAddress) {
+      showAlert("Erreur", "Veuillez remplir tous les champs", "error");
+      return;
+    }
+
+    try {
+      await login({
+        name: loginName,
+        phone: loginPhone,
+        address: loginAddress,
+      });
+      setShowLogin(false);
+      setLoginName("");
+      setLoginPhone("");
+      setLoginAddress("");
+      showAlert(
+        "Succès",
+        "Connexion réussie! Bienvenue sur Agree 🥗",
+        "success",
+      );
+    } catch (error) {
+      showAlert("Erreur", "Erreur lors de la connexion", "error");
+    }
   };
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Pas de profil</Text>
-        <Text style={styles.subtitle}>Veuillez vous connecter d'abord</Text>
-      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <ScrollView contentContainerStyle={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>🥗</Text>
+          <Text style={styles.title}>Bienvenue sur Agree!</Text>
+          <Text style={styles.subtitle}>
+            Connectez-vous pour accéder à votre profil et voir l'historique de
+            vos commandes
+          </Text>
+
+          {!showLogin ? (
+            <>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => setShowLogin(true)}
+              >
+                <Text style={styles.primaryButtonText}>🔐 Se Connecter</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => navigation.navigate("Home")}
+              >
+                <Text style={styles.secondaryButtonText}>
+                  🥗 Explorer les Produits
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.loginForm}>
+              <Text style={styles.formTitle}>Connexion</Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Nom complet</Text>
+                <TextInput
+                  style={styles.input}
+                  value={loginName}
+                  onChangeText={setLoginName}
+                  placeholder="Votre nom complet"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Téléphone</Text>
+                <TextInput
+                  style={styles.input}
+                  value={loginPhone}
+                  onChangeText={setLoginPhone}
+                  placeholder="06XXXXXXXX"
+                  keyboardType="phone-pad"
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Adresse</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={loginAddress}
+                  onChangeText={setLoginAddress}
+                  placeholder="Votre adresse complète"
+                  multiline
+                  numberOfLines={3}
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={handleLogin}
+              >
+                <Text style={styles.primaryButtonText}>✅ Confirmer</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowLogin(false)}
+              >
+                <Text style={styles.cancelButtonText}>Annuler</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {!showLogin && (
+            <View style={styles.infoBox}>
+              <Text style={styles.infoText}>
+                ℹ️ Avec votre compte, vous aurez accès à:
+              </Text>
+              <Text style={styles.infoItem}>• Votre profil personnel</Text>
+              <Text style={styles.infoItem}>
+                • L'historique de vos commandes
+              </Text>
+              <Text style={styles.infoItem}>• Le suivi de vos livraisons</Text>
+              <Text style={styles.infoItem}>
+                • La modification rapide de vos informations
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+        <CustomAlert {...alertConfig} />
+      </KeyboardAvoidingView>
     );
   }
 
@@ -223,7 +354,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 24,
     fontWeight: "bold",
-    color: colors.text,
+    color: colors.textPrimary,
   },
   section: {
     backgroundColor: "white",
@@ -250,7 +381,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 15,
     fontSize: 16,
-    color: colors.text,
+    color: colors.textPrimary,
     borderWidth: 1,
     borderColor: "#E5E7EB",
   },
@@ -304,7 +435,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cancelButtonText: {
-    color: colors.text,
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: "600",
   },
@@ -324,7 +455,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: colors.text,
+    color: colors.textPrimary,
     textAlign: "center",
     marginBottom: 10,
   },
@@ -332,5 +463,89 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textSecondary,
     textAlign: "center",
+  },
+  emptyContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  emptyIcon: {
+    fontSize: 80,
+    marginBottom: 20,
+  },
+  loginForm: {
+    width: "100%",
+    backgroundColor: "white",
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  formTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: colors.primary,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  primaryButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 20,
+    width: "100%",
+    alignItems: "center",
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  primaryButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  secondaryButton: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    width: "100%",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  secondaryButtonText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  infoBox: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 30,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  infoText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 15,
+    lineHeight: 20,
+  },
+  infoItem: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    marginLeft: 10,
+    marginBottom: 8,
+    lineHeight: 20,
   },
 });
